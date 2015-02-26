@@ -1,0 +1,183 @@
+#include "opencv2/objdetect/objdetect.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+
+#include <time.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+
+using namespace std;
+using namespace cv;
+
+/** Function Headers */
+void detectAndDisplay( Mat frame );
+
+/** Global variables */
+
+//String face_cascade_name = "C:\\opencv\\sources\\data\\lbpcascades\\lbpcascade_frontalface.xml";
+//String face_cascade_name = "C:\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml";
+//String eyes_cascade_name = "C:\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml";
+
+String face_cascade_name = "/home/pi/haarcascades/haarcascade_frontalface_alt.xml";
+//String face_cascade_name = "/home/pi/lbpcascades/lbpcascade_frontalface.xml";
+String eyes_cascade_name = "/home/pi/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
+
+
+CascadeClassifier face_cascade;
+CascadeClassifier eyes_cascade;
+String window_name = "Capture - Face detection1";
+
+int gotFace = 0;
+Mat croppedImage;
+
+clock_t begin_time;
+
+/** @function main */
+int main( void )
+{
+    VideoCapture stream1(1);
+    Mat frame;
+
+    //-- 1. Load the cascades
+    if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading face cascade\n"); return -1; };
+    //if( !eyes_cascade.load( eyes_cascade_name ) ){ printf("--(!)Error loading eyes cascade\n"); return -1; };
+
+    //-- 2. Read the video stream
+    //stream1.open( 1 );
+    if ( ! stream1.isOpened() ) { printf("--(!)Error opening video capture\n"); return -1; }
+
+    begin_time = clock();
+    while ( stream1.read(frame) )
+    {
+        if( frame.empty() )
+        {
+            printf(" --(!) No captured frame -- Break!");
+            break;
+        }
+
+        //-- 3. Apply the classifier to the frame
+        detectAndDisplay( frame );
+
+        int c = waitKey(10);
+        if( (char)c == 27 ) { break; } // escape
+    }
+
+    return 0;
+}
+
+/** @function detectAndDisplay */
+void detectAndDisplay( Mat frame_src )
+{
+	static int matchCounter = 1;
+	static int noMatchCounter = 0;
+    std::vector<Rect> faces;
+    Mat frame;
+    Mat frame_gray;
+    Mat result;
+    int match_method = CV_TM_SQDIFF_NORMED;
+    int match = 0;
+
+
+
+    resize(frame_src, frame, Size(640, 480));
+
+    cvtColor( frame, frame_gray, COLOR_BGR2GRAY );
+    equalizeHist( frame_gray, frame_gray );
+
+    //-- Detect faces by Cascade Classification
+
+    if (!gotFace) {
+		face_cascade.detectMultiScale( frame_gray, faces, 1.05, 4, 0|CASCADE_SCALE_IMAGE, Size(100, 100), Size(320, 240) );
+
+		for ( size_t i = 0; i < faces.size(); i++ )
+		{
+			gotFace = 1;
+			Point center( faces[i].x + faces[i].width/2, faces[i].y + faces[i].height/2 );
+
+
+			Mat faceROI = frame_gray( faces[i] );
+			//std::vector<Rect> eyes;
+
+			//-- In each face, detect eyes
+			//eyes_cascade.detectMultiScale( faceROI, eyes, 1.1, 2, 0 |CASCADE_SCALE_IMAGE, Size(30, 30) );
+
+			//for ( size_t j = 0; j < eyes.size(); j++ )
+			//{
+			//    Point eye_center( faces[i].x + eyes[j].x + eyes[j].width/2, faces[i].y + eyes[j].y + eyes[j].height/2 );
+			//    int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
+			//    circle( frame, eye_center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
+			//}
+
+			frame_gray( faces[i] ).copyTo(croppedImage);
+			//imshow( "croppedImage1", croppedImage );
+
+
+
+
+			//ellipse( frame, center, Size( faces[i].width/2, faces[i].height/2 ), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+
+		}
+    } else {
+
+    // let's doing template matching
+    // 	 frame_gray as original image
+    //   croppedImage as patch
+
+    	match = 0;
+    	int result_cols = frame_gray.cols - croppedImage.cols + 1;
+    	int result_rows = frame_gray.rows - croppedImage.rows + 1;
+    	result.create( result_cols, result_rows, CV_32FC1 );
+
+    	//printf("croppedImage_cols = %d & croppedImage_rows = %d \n", croppedImage.cols, croppedImage.rows);
+    	//printf("result_cols = %d & result_rows = %d \n", result_cols, result_rows);
+    	//if (frame_gray.depth() == CV_8U || frame_gray.depth() == CV_32F)
+    	//	printf("img.depth() is OK\n");
+    	//if (frame_gray.type() == croppedImage.type())
+    	//	printf("img.type() is OK\n");
+
+    	/// Do the Matching and Normalize
+    	matchTemplate( frame_gray, croppedImage, result, match_method);
+    	//normalize( result, result, 0, 1, NORM_MINMAX, -1.0, Mat() );
+
+    	/// Localizing the best match with minMaxLoc
+    	double minVal; double maxVal; Point minLoc; Point maxLoc;
+    	Point matchLoc;
+
+    	minMaxLoc( result, &minVal, &maxVal, &minLoc, &maxLoc, Mat() );
+
+    	/// For SQDIFF and SQDIFF_NORMED, the best matches are lower values. For all the other methods, the higher the better
+    	if( match_method  == CV_TM_SQDIFF || match_method == CV_TM_SQDIFF_NORMED )
+    	    {
+    			if (minVal <=0.18) {
+    				matchLoc = minLoc;
+    				match = 1;
+    			}
+    			printf("minVal = %f\n", (float) minVal);
+    			printf("maxVal = %f\n", (float) maxVal);
+    	    }
+    	else
+    	    { matchLoc = maxLoc; }
+
+    	/// Show me what you got
+    	if (match) {
+    		noMatchCounter = 0;
+    		rectangle(frame, matchLoc, Point( matchLoc.x + croppedImage.cols , matchLoc.y + croppedImage.rows ), Scalar::all(0), 2, 8, 0 );
+    	//rectangle( result, matchLoc, Point( matchLoc.x + croppedImage.cols , matchLoc.y + croppedImage.rows ), Scalar::all(0), 2, 8, 0 );
+    	} else {
+    		noMatchCounter ++;
+    		if (noMatchCounter >= 75) gotFace=0;
+    	}
+
+
+
+    }
+
+    printf("FPS = %f\n", (float) matchCounter / ((clock() - begin_time)/CLOCKS_PER_SEC));
+    cout.flush();
+    //-- Show what you got
+    imshow( window_name, frame );
+    matchCounter++;
+
+
+}

@@ -70,7 +70,7 @@ int main( void )
 /** @function detectAndDisplay */
 void detectAndDisplay( Mat frame_src )
 {
-	static int matchCounter = 1;
+	static int frameCounter = 1;
 	static int noMatchCounter = 0;
     std::vector<Rect> faces;
     Mat frame;
@@ -155,11 +155,14 @@ void detectAndDisplay( Mat frame_src )
 
     }
 
-    printf("FPS = %f\n", (float) matchCounter / ((clock() - begin_time)/CLOCKS_PER_SEC));
+    printf("FPS = %f\n", (float) frameCounter / (float) ((float) (clock() - begin_time)/CLOCKS_PER_SEC));
     cout.flush();
+
+    //printf("frameCounter=%f, time=%f\n", (float) frameCounter, (float) ((float) (clock() - begin_time)/CLOCKS_PER_SEC));
+
     //-- Show what you got
     imshow( window_name, frame );
-    matchCounter++;
+    frameCounter++;
 
 
 }

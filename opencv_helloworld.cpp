@@ -2,6 +2,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+#include <time.h>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,6 +23,9 @@ CascadeClassifier face_cascade;
 CascadeClassifier eyes_cascade;
 String window_name = "Capture - Face detection";
 
+clock_t	begin_time;
+unsigned long frameCounter = 1;
+
 /** @function main */
 int main( void )
 {
@@ -35,6 +39,8 @@ int main( void )
     //-- 2. Read the video stream
     //stream1.open( -1 );
     if ( ! stream1.isOpened() ) { printf("--(!)Error opening video capture\n"); return -1; }
+
+    begin_time = clock();
 
     while ( stream1.read(frame) )
     {
@@ -65,7 +71,7 @@ void detectAndDisplay( Mat frame )
 //    equalizeHist( frame_gray, frame_gray );
 
     //-- Detect faces
-    face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CASCADE_SCALE_IMAGE, Size(5, 5) );
+    face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CASCADE_SCALE_IMAGE, Size(5, 5), Size(40, 30) );
 
     for ( size_t i = 0; i < faces.size(); i++ )
     {
@@ -88,4 +94,9 @@ void detectAndDisplay( Mat frame )
     }
     //-- Show what you got
     imshow( window_name, frame );
+
+    printf("FPS = %f\n", (float) frameCounter / (float) ((float) (clock() - begin_time)/CLOCKS_PER_SEC));
+    cout.flush();
+
+    frameCounter++;
 }

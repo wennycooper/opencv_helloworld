@@ -2,7 +2,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include <time.h>
+#include <sys/time.h>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +29,11 @@ String window_name = "Capture - Face detection1";
 int gotFace = 0;
 Mat croppedImage;
 
-clock_t begin_time;
+struct timeval	tv, tv2;
+unsigned long long      start_timestamp;
+unsigned long long      current_timestamp;
+unsigned long frameCounter = 1;
+float	t;
 
 /** @function main */
 int main( void )
@@ -46,7 +50,9 @@ int main( void )
     //stream1.open( 1 );
     if ( ! stream1.isOpened() ) { printf("--(!)Error opening video capture\n"); return -1; }
 
-    begin_time = clock();
+    gettimeofday(&tv, NULL);
+    start_timestamp = tv.tv_sec * 1000000 + tv.tv_usec;
+
     while ( stream1.read(frame) )
     {
         if( frame.empty() )
@@ -70,7 +76,6 @@ int main( void )
 /** @function detectAndDisplay */
 void detectAndDisplay( Mat frame_src )
 {
-	static int frameCounter = 1;
 	static int noMatchCounter = 0;
     std::vector<Rect> faces;
     Mat frame;
@@ -155,7 +160,12 @@ void detectAndDisplay( Mat frame_src )
 
     }
 
-    printf("FPS = %f\n", (float) frameCounter / (float) ((float) (clock() - begin_time)/CLOCKS_PER_SEC));
+    gettimeofday(&tv2, NULL);
+    current_timestamp = tv2.tv_sec * 1000000 + tv2.tv_usec;
+
+    t = (float) (current_timestamp - start_timestamp) / 1000000;
+
+    printf("FPS=%f, t=%f\n", (float) frameCounter/t,(float)t );
     cout.flush();
 
     //printf("frameCounter=%f, time=%f\n", (float) frameCounter, (float) ((float) (clock() - begin_time)/CLOCKS_PER_SEC));

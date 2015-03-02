@@ -2,7 +2,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
-#include <time.h>
+#include <sys/time.h>
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,8 +23,11 @@ CascadeClassifier face_cascade;
 CascadeClassifier eyes_cascade;
 String window_name = "Capture - Face detection";
 
-clock_t	begin_time;
+struct timeval 		tv, tv2;
+unsigned long long	start_timestamp;
+unsigned long long	current_timestamp;
 unsigned long frameCounter = 1;
+float	t;
 
 /** @function main */
 int main( void )
@@ -40,7 +43,8 @@ int main( void )
     //stream1.open( -1 );
     if ( ! stream1.isOpened() ) { printf("--(!)Error opening video capture\n"); return -1; }
 
-    begin_time = clock();
+    gettimeofday(&tv, NULL);
+    start_timestamp = tv.tv_sec * 1000000 + tv.tv_usec;
 
     while ( stream1.read(frame) )
     {
@@ -77,7 +81,7 @@ void detectAndDisplay( Mat frame )
     {
        Point center( faces[i].x + faces[i].width/2, faces[i].y + faces[i].height/2 );
         ellipse( frame, center, Size( faces[i].width/2, faces[i].height/2 ), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
-        cout << faces[i].x << endl;
+        //cout << faces[i].x << endl;
 
         //Mat faceROI = frame_gray( faces[i] );
         //std::vector<Rect> eyes;
@@ -95,7 +99,12 @@ void detectAndDisplay( Mat frame )
     //-- Show what you got
     imshow( window_name, frame );
 
-    printf("FPS = %f\n", (float) frameCounter / (float) ((float) (clock() - begin_time)/CLOCKS_PER_SEC));
+    gettimeofday(&tv2, NULL);
+    current_timestamp = tv2.tv_sec * 1000000 + tv2.tv_usec;
+
+    t = (float) (current_timestamp - start_timestamp)/1000000;
+
+    printf("FPS = %f, t=%f\n", (float) frameCounter/t, (float)t);
     cout.flush();
 
     frameCounter++;

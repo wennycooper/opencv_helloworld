@@ -12,8 +12,16 @@ using namespace cv;
 
 /** Function Headers */
 void detectAndDisplay( Mat frame );
+void myFilter(double x, double y, double width, double height);
 
 /** Global variables */
+
+double filter_x;
+double filter_y;
+double filter_width;
+double filter_height;
+
+int firstBodyFound = 0;
 
 String face_cascade_name = "/usr/local/share/OpenCV/haarcascades/haarcascade_fullbody.xml";
 //String face_cascade_name = "/home/pi/lbpcascades/lbpcascade_frontalface.xml";
@@ -79,14 +87,21 @@ void detectAndDisplay( Mat frameOrig )
     t = (double)cvGetTickCount() - t;
     printf( "detection time = %g ms\n", t/((double)cvGetTickFrequency()*1000.) );
 
-    for ( size_t i = 0; i < faces.size(); i++ )
-    {
-       //Point center( (faces[i].x + faces[i].width/2) * 4, (faces[i].y + faces[i].height/2) * 4 );
-       //ellipse( frameOrig, center, Size( faces[i].width/2 * 4, faces[i].height/2 *4), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
+//    for ( size_t i = 0; i < faces.size(); i++ )
+
+    if (faces.size() > 0) {
+        myFilter(faces[0].x * 4, faces[0].y * 4, faces[0].width * 4, faces[0].height * 4);
+        firstBodyFound = 1;
+    }
+
+    if (firstBodyFound) {
+        size_t i = 0;
+        //Point center( (faces[i].x + faces[i].width/2) * 4, (faces[i].y + faces[i].height/2) * 4 );
+        //ellipse( frameOrig, center, Size( faces[i].width/2 * 4, faces[i].height/2 *4), 0, 0, 360, Scalar( 255, 0, 255 ), 4, 8, 0 );
 
         rectangle( frameOrig,
-           Point( faces[i].x * 4, faces[i].y * 4),
-           Point( (faces[i].x + faces[i].width) * 4, (faces[i].y + faces[i].height) * 4),
+           Point( filter_x, filter_y),
+           Point( filter_x + filter_width, filter_y + filter_height),
            Scalar( 0, 255, 255 ),
            5,
            8 );
@@ -95,5 +110,20 @@ void detectAndDisplay( Mat frameOrig )
     imshow( window_name, frameOrig );
 
     cout.flush();
+}
 
+
+// my simple filter
+void myFilter(double x, double y, double width, double height)
+{
+    double Kp = 0.8;
+    double d_x = x - filter_x;
+    double d_y = y - filter_y;
+    double d_width = width - filter_width;
+    double d_height = height - filter_height;
+
+    filter_x += Kp * d_x;
+    filter_y += Kp * d_y;
+    filter_width  += Kp * d_width;
+    filter_height += Kp * d_height;
 }

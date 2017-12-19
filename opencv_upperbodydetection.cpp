@@ -15,7 +15,7 @@ void detectAndDisplay( Mat frame );
 
 /** Global variables */
 
-String face_cascade_name = "/usr/local/share/OpenCV/haarcascades/haarcascade_upperbody.xml";
+String face_cascade_name = "./data/haarcascades/haarcascade_upperbody.xml";
 //String face_cascade_name = "/home/pi/lbpcascades/lbpcascade_frontalface.xml";
 //String eyes_cascade_name = "/usr/local/share/OpenCV/haarcascades/haarcascade_eye_tree_eyeglasses.xml";
 
@@ -27,7 +27,7 @@ float	t;
 /** @function main */
 int main( void )
 {
-    VideoCapture stream1(1);  // my camera is in /dev/video1
+    VideoCapture stream1(0);  // my camera is in /dev/video1
     Mat frame;
 
     //-- 1. Load the cascades

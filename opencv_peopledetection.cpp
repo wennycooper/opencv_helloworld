@@ -4,9 +4,9 @@ using namespace cv;
  
 int main (int argc, const char * argv[])
 {
-    VideoCapture cap(1);
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+    VideoCapture cap(0);
+    cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
+    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
  
     if (!cap.isOpened())
         return -1;
@@ -23,8 +23,8 @@ int main (int argc, const char * argv[])
             continue;
  
         vector<Rect> found, found_filtered;
-        //hog.detectMultiScale(img, found, 0, Size(8,8), Size(32,32), 1.05, 2);
-        hog.detectMultiScale(img, found);
+        hog.detectMultiScale(img, found, 0, Size(8,8), Size(32,32), 1.1, 2);
+        //hog.detectMultiScale(img, found);
         size_t i, j;
         for (i=0; i<found.size(); i++) 
         {
